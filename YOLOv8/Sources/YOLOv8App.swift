@@ -8,7 +8,7 @@ import SwiftUI
 struct YOLOv8App: App {
   var body: some Scene {
     WindowGroup {
-      ContentView()
+      MainView()
     }
   }
 }
