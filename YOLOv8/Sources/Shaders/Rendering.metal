@@ -4,6 +4,7 @@
 
 #include <metal_stdlib>
 #import "Common.h"
+#import "YOLO.h"
 
 using namespace metal;
 
@@ -30,9 +31,34 @@ vertex VertexOut vertexBaseRendering(const VertexIn in [[ stage_in ]],
 }
 
 fragment float4 fragmentBaseRendering(FragmentIn in [[ stage_in ]],
-                                      texture2d<float, access::sample> texture [[ texture(0) ]])
+                                      texture2d<float, access::sample> texture [[ texture(0) ]],
+                                      texture2d_array<float, access::sample> segmentationMask [[ texture(1) ]],
+                                      constant SegmentationParams& segmentationParams [[ buffer(0) ]],
+                                      constant BBox* bboxes [[ buffer(1) ]],
+                                      uint index [[ viewport_array_index ]])
 {
   constexpr sampler imageSampler(coord::normalized,
-                                 filter::linear);
-  return float4(texture.sample(imageSampler, in.uv).rgb, 1);
+                                 filter::nearest);
+
+  float maxConfidence = 0;
+  int classId = -1;
+  for (uint i = 0; i < segmentationParams.bboxCount; ++i) {
+//    BBox bbox = bboxes[i];
+//    if (int(gid.x) > bbox.x && int(gid.x) < (bbox.x + bbox.w)
+//        && int(gid.y) > bbox.y && int(gid.y) < (bbox.y + bbox.h))
+//    {
+//    }
+    float maskValue = segmentationMask.sample(imageSampler, in.uv, i).r;
+    float sigmoid = 1 / (1 + exp(-maskValue));
+    if (maskValue != 0 && sigmoid > segmentationParams.confidence && sigmoid > maxConfidence) {
+      maxConfidence = sigmoid;
+      classId = i;
+    }
+  }
+
+  if (classId != -1) {
+    return float4(1, 0, 0, 1);
+  } else {
+    return float4(texture.sample(imageSampler, in.uv).rgb, 1);
+  }
 }

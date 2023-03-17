@@ -26,4 +26,9 @@ typedef struct BBox {
   int classId;
 } BBox;
 
+typedef struct SegmentationParams {
+  float confidence;
+  uint bboxCount;
+} SegmentationParams;
+
 #endif /* YOLO_h */

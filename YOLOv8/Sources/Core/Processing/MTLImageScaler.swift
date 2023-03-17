@@ -32,6 +32,29 @@ final class MTLImageScaler {
   }
 
   func rescale(
+    _ commandBuffer: MTLCommandBuffer,
+    texture: MTLTexture,
+    pixelFormat: MTLPixelFormat
+  ) throws -> MTLCVTexture {
+    guard
+      let rescaledPixelBufferPool,
+      let rescaledTexture: MTLCVTexture = .make(
+        usingPixelBufferPool: rescaledPixelBufferPool,
+        textureCache: textureCache,
+        pixelFormat: pixelFormat
+      )
+    else {
+      throw Error.failedToRescale
+    }
+    scaler.encode(
+      commandBuffer: commandBuffer,
+      sourceTexture: texture,
+      destinationTexture: rescaledTexture.texture
+    )
+    return rescaledTexture
+  }
+
+  func rescale(
     _ pixelBuffer: CVPixelBuffer,
     commandQueue: MTLCommandQueue
   ) throws -> MTLCVTexture {

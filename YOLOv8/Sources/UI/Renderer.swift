@@ -40,6 +40,7 @@ final class Renderer {
   }
 
   func resize(size: CGSize, textureSize: CGSize) {
+    print(size)
     let ratio = Float(textureSize.whRatio)
     var referenceSize = size
     switch Renderer.aspectMode {
@@ -76,10 +77,15 @@ final class Renderer {
     renderPassDescriptor.colorAttachments[0].loadAction = .clear
 
     renderEncoder.setRenderPipelineState(pipelineState)
+//    renderEncoder.setFragmentTexture(<#T##texture: MTLTexture?##MTLTexture?#>, index: 1)
     renderEncoder.setVertexBuffer(backgroundPlane, offset: 0, index: 0)
     renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<VertexUniforms>.stride, index: 1)
 
     renderEncoder.setFragmentTexture(texture, index: 0)
+    renderEncoder.setFragmentTexture(frame.maskTextures.first, index: 1)
+
+    var segmentationParams = SegmentationParams(confidence: 0.5, bboxCount: 2)
+    renderEncoder.setFragmentBytes(&segmentationParams, length: MemoryLayout<SegmentationParams>.stride, index: 0)
 
     renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
 

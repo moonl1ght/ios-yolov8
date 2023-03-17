@@ -4,6 +4,7 @@
 
 import Foundation
 import MetalKit
+import MetalPerformanceShaders
 
 protocol ObjectDetectionDelegate: AnyObject {
   func didDetectFrame(_ frame: Frame)
@@ -25,6 +26,7 @@ final class ObjectDetectionController {
   private let queue: DispatchQueue
   private let commandQueue: MTLCommandQueue
   private let imageScaler: MTLImageScaler
+  private let segmentationImageScaler: MTLImageScaler
   private let model = ObjectDetectionModel()
 
   // Pipeline states
@@ -32,6 +34,8 @@ final class ObjectDetectionController {
   private let computeThreadgroupsPerGridPipelineState: MTLComputePipelineState
   private let nmsPipelineState: MTLComputePipelineState
   private let cleanUpPipelineState: MTLComputePipelineState
+//  private let matrixMultiplier: MPSMatrixMultiplication
+//  private let sigmoidPipelineState: MTLComputePipelineState
 
   // Buffers
   var bboxes: MTLBuffer?
@@ -49,6 +53,9 @@ final class ObjectDetectionController {
     imageScaler = MTLImageScaler(
       device: device, textureCache: textureCache, rescaledSize: ObjectDetectionModel.inputSize
     )
+    segmentationImageScaler = MTLImageScaler(
+      device: device, textureCache: textureCache, rescaledSize: ObjectDetectionModel.inputSize
+    )
     filterBBoxPipelineState = MTLPipelineState.createCompute(
       library: library, device: device, functionName: "filterBBoxes", label: "filterBBoxes"
     )
@@ -61,6 +68,9 @@ final class ObjectDetectionController {
     cleanUpPipelineState = MTLPipelineState.createCompute(
       library: library, device: device, functionName: "cleanUpBuffers", label: "cleanUpBuffers"
     )
+//    sigmoidPipelineState = MTLPipelineState.createCompute(
+//      library: library, device: device, functionName: "sigmoid", label: "sigmoid"
+//    )
   }
 
   func load(_ completion: @escaping (Result<Void, Swift.Error>) -> Void) {
@@ -153,13 +163,16 @@ final class ObjectDetectionController {
 
   private func segmentation(
     _ maskProposalsMatrix: MPSMatrix,
-    protosMatrix: MPSMatrix,
-    bbox: inout NMSBBox
-  ) -> MTLCVTexture? {
+    protosMatrix: MPSMatrix
+  ) -> [MTLTexture] {
+    let matrixMultiplier = MPSMatrixMultiplication(
+      device: device, resultRows: 2, resultColumns: 160 * 160, interiorColumns: 32
+    )
     guard let commandBuffer = commandQueue.makeCommandBuffer() else {
-      return nil
+      assertionFailure()
+      return []
     }
-    let resdescr = MPSMatrixDescriptor(rows: 1, columns: 160 * 160, rowBytes: MemoryLayout<Float>.stride * 160 * 160, dataType: .float32)
+    let resdescr = MPSMatrixDescriptor(rows: 2, columns: 160 * 160, rowBytes: MemoryLayout<Float>.stride * 160 * 160, dataType: .float32)
     let resultMatrix = MPSMatrix(device: device, descriptor: resdescr)
     matrixMultiplier.encode(commandBuffer: commandBuffer, leftMatrix: maskProposalsMatrix, rightMatrix: protosMatrix, resultMatrix: resultMatrix)
 
@@ -168,103 +181,112 @@ final class ObjectDetectionController {
 
     let pptr = resultMatrix.data.contents().assumingMemoryBound(to: Float.self)
 
+//    var zeros1 = 0
+//    for i in 0 ..< 160 * 160 {
+//      if pptr[i] == 0 {
+//        zeros1 += 1
+//      }
+//      print(pptr[i])
+//    }
+//    print("ZEROS: \(zeros1)")
+
+//    var zeros = 0
+//    for i in 160 * 160 ..< 2 * 160 * 160 {
+//      if pptr[i] == 0 {
+//        zeros += 1
+//      }
+////      print(pptr[i])
+//    }
+//    print("ZEROS2: \(zeros)")
+//    print()
+
     //    let bpttr = UnsafeMutableBufferPointer(start: pptr, count: 160 * 160)
     //    let imgb = bpttr[0 ..< 160 * 160]
 
-    var pixelBuffer: CVPixelBuffer?
-
-    let outputBufferAttributes: [String: Any] = [
-      kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_OneComponent32Float,
-      kCVPixelBufferWidthKey as String: 160,
-      kCVPixelBufferHeightKey as String: 160,
-      kCVPixelBufferIOSurfacePropertiesKey as String: [:]
-    ]
+//    var pixelBuffer: CVPixelBuffer?
+//
+//    let outputBufferAttributes: [String: Any] = [
+//      kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_OneComponent32Float,
+//      kCVPixelBufferWidthKey as String: 160,
+//      kCVPixelBufferHeightKey as String: 160,
+//      kCVPixelBufferIOSurfacePropertiesKey as String: [:]
+//    ]
     //    guard let baseAddress = bpttr.baseAddress else { return }
-    CVPixelBufferCreateWithBytes(
-      kCFAllocatorDefault, 160, 160,
-      kCVPixelFormatType_OneComponent32Float,
-      pptr,
-      MemoryLayout<Float>.stride * 160, nil, nil, outputBufferAttributes as NSDictionary,
-      &pixelBuffer
-    )
-
-    let depthImage1 = CIImage(cvPixelBuffer: pixelBuffer!)
-    let img1 = UIImage(ciImage: depthImage1)
-
+//    CVPixelBufferCreateWithBytes(
+//      kCFAllocatorDefault, 160, 160,
+//      kCVPixelFormatType_OneComponent32Float,
+//      pptr,
+//      MemoryLayout<Float>.stride * 160, nil, nil, outputBufferAttributes as NSDictionary,
+//      &pixelBuffer
+//    )
+//
+//    let depthImage1 = CIImage(cvPixelBuffer: pixelBuffer!)
+//    let img1 = UIImage(ciImage: depthImage1)
+//
     guard let commandBuffer1 = commandQueue.makeCommandBuffer() else {
-      return nil
+      return []
     }
 
     //    let texture = pixelBuffer?.makeMTLTexture(usingTextureCache: textureCache, pixelFormat: .depth32Float)
     //    let texture = try? segmentationImageScaler.rescale(pixelBuffer!, commandBuffer: commandBuffer1, pixelFormat: .r32Float).texture
 
     let textureDescriptor = MTLTextureDescriptor()
-    textureDescriptor.textureType = .type2D
-    //    textureDescriptor.arrayLength = 2
+    textureDescriptor.textureType = .type2DArray
+    textureDescriptor.arrayLength = 2
     textureDescriptor.pixelFormat = .r32Float
+//    textureDescriptor.depth = 1
     textureDescriptor.width = 160
     textureDescriptor.height = 160
+
     textureDescriptor.usage = [.shaderRead, .shaderWrite]
 
-    let oldtexture = resultMatrix.data.makeTexture(descriptor: textureDescriptor, offset: 0, bytesPerRow: MemoryLayout<Float>.stride * 160)
+    var textures: [MTLTexture] = []
 
-    let texture = try? segmentationImageScaler.rescale(oldtexture!, commandBuffer: commandBuffer1, pixelFormat: .r32Float)
-    //
-    ////    TextureLoader
-    //
-    //    let texture = resultMatrix.
-    //
-    //    guard let blitEncoder = commandBuffer.makeBlitCommandEncoder() else { return }
-    //    blitEncoder.copy(
-    //      from: resultMatrix.data,
-    //      sourceOffset: 0,
-    //      sourceBytesPerRow: MemoryLayout<Float>.stride * 160,
-    //      sourceBytesPerImage: MemoryLayout<Float>.stride * 160 * 160,
-    //      sourceSize: .init(width: 160, height: 160, depth: 1),
-    //      to: texture!,
-    //      destinationSlice: 0, destinationLevel: 0, destinationOrigin: .init(x: 0, y: 0, z: 0))
+    let blitEncoder = commandBuffer1.makeBlitCommandEncoder()!
 
-    guard let computeEncoder = commandBuffer1.makeComputeCommandEncoder() else { return nil }
-    computeEncoder.setComputePipelineState(sigmoidPipelineState)
-    computeEncoder.setTexture(texture?.texture, index: 0)
-    computeEncoder.setBytes(&bbox, length: MemoryLayout<NMSBBox>.stride, index: 0)
-    //    let sigmoidOutput = device.makeBuffer(length: MemoryLayout<Float>.stride * 2 * 160 * 160)
-    //    computeEncoder.setBuffer(sigmoidOutput, offset: 0, index: 1)
-    let threadsPerGrid = sigmoidPipelineState.calculateThreadsPerGrid(for: texture!.texture)
-    computeEncoder.dispatchThreads(threadsPerGrid, threadsPerThreadgroup: sigmoidPipelineState.threadgroupSize)
-    computeEncoder.endEncoding()
+    let tex = device.makeTexture(descriptor: textureDescriptor)
+
+    blitEncoder.copy(
+      from: resultMatrix.data,
+      sourceOffset: 0,
+      sourceBytesPerRow: MemoryLayout<Float>.stride * 160,
+      sourceBytesPerImage: MemoryLayout<Float>.stride * 160 * 160,
+      sourceSize: .init(width: 160, height: 160, depth: 1),
+      to: tex!,
+      destinationSlice: 1,
+      destinationLevel: 0,
+      destinationOrigin: .init(x: 0, y: 0, z: 0)
+    )
+//    blitEncoder.copy(
+//      from: resultMatrix.data,
+//      sourceOffset: MemoryLayout<Float>.stride * 160 * 160,
+//      sourceBytesPerRow: MemoryLayout<Float>.stride * 160,
+//      sourceBytesPerImage: MemoryLayout<Float>.stride * 160 * 160,
+//      sourceSize: .init(width: 160, height: 160, depth: 1),
+//      to: tex!,
+//      destinationSlice: 0,
+//      destinationLevel: 0,
+//      destinationOrigin: .init(x: 0, y: 0, z: 0)
+//    )
+    blitEncoder.endEncoding()
+
+//    for i in 0..<2 {
+//      let oldtexture = resultMatrix.data.makeTexture(
+//        descriptor: textureDescriptor, offset: i * MemoryLayout<Float>.stride * 160 * 160, bytesPerRow: MemoryLayout<Float>.stride * 160
+//      )!
+//      textures.append(oldtexture)
+//    }
 
     commandBuffer1.commit()
     commandBuffer1.waitUntilCompleted()
 
-    //
-    //    let pptr = sigmoidOutput?.contents().assumingMemoryBound(to: Float.self)
-    //
-    //    let bpttr = UnsafeMutableBufferPointer(start: pptr, count: 160 * 160)
-    //    let imgb = bpttr[0 ..< 160 * 160]
-    //
-    //    var pixelBuffer1: CVPixelBuffer?
-    //
-    //    let outputBufferAttributes: [String: Any] = [
-    //      kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_DepthFloat32,
-    //      kCVPixelBufferWidthKey as String: 160,
-    //      kCVPixelBufferHeightKey as String: 160,
-    //      kCVPixelBufferIOSurfacePropertiesKey as String: [:]
-    //    ]
-    //    guard let baseAddress = UnsafeMutableBufferPointer(rebasing: imgb).baseAddress else { return }
-    //    CVPixelBufferCreateWithBytes(
-    //      kCFAllocatorDefault, 160, 160,
-    //      kCVPixelFormatType_DepthFloat32,
-    //      baseAddress,
-    //      MemoryLayout<Float>.stride * 160, nil, nil, outputBufferAttributes as NSDictionary,
-    //      &pixelBuffer1
-    //    )
-    //    let depthImage = CIImage(cvPixelBuffer: texture!.pixelBuffer)
-    //    let img = UIImage(ciImage: depthImage)
-    //    try body(pixelBuffer)
+    textures.append(tex!)
 
+//    let oldtexture = resultMatrix.data.makeTexture(descriptor: textureDescriptor, offset: 0, bytesPerRow: MemoryLayout<Float>.stride * 160)
 
-    return texture
+//    let texture = try? segmentationImageScaler.rescale(commandBuffer1, texture: oldtexture!, pixelFormat: .r32Float)
+
+    return textures
   }
 }
 
@@ -284,11 +306,11 @@ extension ObjectDetectionController: CameraControllerDelegate {
           return
         }
 
-//        let bboxes = device.makeBuffer(length: MemoryLayout<BBox>.stride * ObjectDetectionModel.stide)
-//        let keptBBoxMap = device.makeBuffer(length: MemoryLayout<Int32>.stride * ObjectDetectionModel.stide)
-//        let maskProposals = device.makeBuffer(
-//          length: MemoryLayout<Float>.stride * ObjectDetectionModel.stide * ObjectDetectionModel.segmentationMaskLength
-//        )
+        //        let bboxes = device.makeBuffer(length: MemoryLayout<BBox>.stride * ObjectDetectionModel.stide)
+        //        let keptBBoxMap = device.makeBuffer(length: MemoryLayout<Int32>.stride * ObjectDetectionModel.stide)
+        let maskProposals = device.makeBuffer(
+          length: MemoryLayout<Float>.stride * ObjectDetectionModel.stide * ObjectDetectionModel.segmentationMaskLength
+        )
 
         guard
           let bboxes,
@@ -321,7 +343,7 @@ extension ObjectDetectionController: CameraControllerDelegate {
           stride: Int32(ObjectDetectionModel.stide),
           numberOfClasses: UInt32(ObjectDetectionModel.classes.count),
           segmentationMaskLength: UInt32(ObjectDetectionModel.segmentationMaskLength),
-          hasSegmentationMask: 0
+          hasSegmentationMask: 1
         )
         computeEncoder.setBytes(&uniforms, length: MemoryLayout<BBoxFilterParams>.stride, index: 0)
         computeEncoder.setBuffer(predictionBuffer, offset: 0, index: 1)
@@ -358,13 +380,54 @@ extension ObjectDetectionController: CameraControllerDelegate {
         let bboxCountPtr = bboxCount.contents().assumingMemoryBound(to: Int32.self)
         let keptBBoxMapPtr = keptBBoxMap.contents().assumingMemoryBound(to: Int32.self)
         let bboxesPtr = bboxes.contents().assumingMemoryBound(to: BBox.self)
+        let maskPropsPTR = maskProposals.contents().assumingMemoryBound(to: Float.self)
+        var keptProposals: [Float] = []
 
         var resultBBoxes: [BBox] = []
-        let count = max(Int(bboxCountPtr[0]), Settings.maxDetectedBBoxes)
+        let count = min(Int(bboxCountPtr[0]), Settings.maxDetectedBBoxes)
         resultBBoxes.reserveCapacity(count)
         for i in 0 ..< count where keptBBoxMapPtr[i] == bboxCountPtr[0] - 1 {
+          for j in 0 ..< 32 {
+            print(maskPropsPTR[i * 32 + j])
+          }
           resultBBoxes.append(bboxesPtr[i])
+          if keptProposals.count < 64 {
+            for j in 0 ..< 32 {
+              keptProposals.append(maskPropsPTR[i * 32 + j])
+            }
+          }
         }
+        print(resultBBoxes.count)
+        print(keptProposals.count)
+        if keptProposals.count == 64 {
+          print(keptProposals)
+          print()
+          let keptProposalsBuffer = device.makeBuffer(bytes: &keptProposals, length: MemoryLayout<Float>.stride * keptProposals.count)
+          let maskProposalsBufferDescr = MPSMatrixDescriptor(
+            rows: 2, columns: 32, rowBytes: MemoryLayout<Float>.stride * 32, dataType: .float32
+          )
+          let maskProposalsMatrix = MPSMatrix(buffer: keptProposalsBuffer!, descriptor: maskProposalsBufferDescr)
+
+          let protosBufferDescr = MPSMatrixDescriptor(
+            rows: 32, columns: 160 * 160, rowBytes: MemoryLayout<Float>.stride * 160 * 160, dataType: .float32
+          )
+
+          let textures = prediction.proto!.withUnsafeMutableBytes { ptr, strides in
+
+            let fp = ptr.assumingMemoryBound(to: Float.self)
+
+            let protosBuffer = device.makeBuffer(
+              bytes: fp.baseAddress!,
+              length: MemoryLayout<Float>.stride * prediction.proto!.count,
+              options: [.storageModeShared]
+            )
+
+            let protosMatrix = MPSMatrix(buffer: protosBuffer!, descriptor: protosBufferDescr)
+            return segmentation(maskProposalsMatrix, protosMatrix: protosMatrix)
+          }
+          frame.maskTextures = textures
+        }
+
 
         frame.bboxes = resultBBoxes
       }

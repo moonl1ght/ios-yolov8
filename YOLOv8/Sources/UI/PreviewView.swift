@@ -58,7 +58,7 @@ final class PreviewViewController: UIViewController {
     super.viewDidAppear(animated)
     mtkView.drawableSize = mtkView.frame.size
     bboxLayers.forEach {
-      $0.frame = mtkView.frame
+      $0.frame = mtkView.layer.bounds
     }
   }
 

@@ -61,20 +61,27 @@ kernel void computeThreadgroupsPerGrid(constant int& bboxCount [[ buffer(0) ]],
   threadgroupsPerGrid[2] = 1;
 }
 
-kernel void sigmoid(constant float* input [[ buffer(0) ]],
-                    device float* output [[ buffer(1) ]],
-                    uint2 gid [[thread_position_in_grid]],
-                    uint2 grid_size [[ threads_per_grid ]])
-{
-  uint pos = gid.x * grid_size.y + gid.y;
-  float x = 1 / (1 + exp(-input[pos]));
-  if (x > 0.5) {
-    output[pos] = 1;
-  } else {
-    output[pos] = 0;
-  }
-}
+//kernel void segmentationMask(constant SegmentationUniforms& segmentationUnifroms [[ buffer(0) ]], // not passed
+//                             constant BBox* bboxes [[ buffer(1) ]])
+//{
+//  
+//}
 
+//kernel void sigmoid(constant float* input [[ buffer(0) ]],
+//                    device float* output [[ buffer(1) ]],
+//                    uint2 gid [[thread_position_in_grid]],
+//                    uint2 grid_size [[ threads_per_grid ]])
+//{
+//  uint pos = gid.x * grid_size.y + gid.y;
+//  float x = 1 / (1 + exp(-input[pos]));
+//  if (x > 0.5) {
+//    output[pos] = 1;
+//  } else {
+//    output[pos] = 0;
+//  }
+//}
+
+// remove, use blit instead
 kernel void cleanUpBuffers(device BBox* bboxes [[ buffer(0) ]],
                            device int* keptBBoxMap [[ buffer(1) ]],
                            uint2 gid [[thread_position_in_grid]])
