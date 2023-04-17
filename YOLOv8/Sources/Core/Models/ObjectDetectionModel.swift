@@ -12,6 +12,7 @@ final class ObjectDetectionModel {
   static let inputSize = CGSize(width: 640, height: 640)
   static let stide: Int = 8400
   static let segmentationMaskLength: Int = 32
+  static let segmentationMaskSize = CGSize(width: 160, height: 160)
 
   static let classes = [
     "person", "bicycle", "car", "motorcycle", "airplane", "bus", "train", "truck", "boat",

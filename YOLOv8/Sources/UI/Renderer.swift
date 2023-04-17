@@ -15,10 +15,12 @@ final class Renderer {
   static let colorPixelFormat: MTLPixelFormat = .bgra8Unorm
   static let aspectMode: AspectMode = .aspectFill
   static var bboxOffset: CGPoint = .zero
+  static var colors: [simd_float3] = []
 
   private let commandQueue: MTLCommandQueue
   private let backgroundPlane: MTLBuffer
   private let pipelineState: MTLRenderPipelineState
+  private let segmentationPipelineState: MTLRenderPipelineState
   private let textureCache: CVMetalTextureCache
   private var uniforms = VertexUniforms()
 
@@ -28,19 +30,28 @@ final class Renderer {
       let commandQueue = device.makeCommandQueue(),
       let library = try? device.makeDefaultLibrary(bundle: .main),
       let backgroundPlane = Renderer.createPlaneVertexBuffer(for: device),
-      let pipelineState = Renderer.createPipelineState(device: device, library: library)
+      let pipelineState = Renderer.createPipelineState(
+        device: device,
+        fragmentFunctionName: "fragmentBaseRendering",
+        library: library
+      ),
+      let segmentationPipelineState = Renderer.createPipelineState(
+        device: device,
+        fragmentFunctionName: "fragmentSegmentationRendering",
+        library: library
+      )
     else {
       fatalError()
     }
     self.commandQueue = commandQueue
     self.backgroundPlane = backgroundPlane
     self.pipelineState = pipelineState
+    self.segmentationPipelineState = segmentationPipelineState
     let textureCache = CVMetalTextureCache.createUsingDevice(device)
     self.textureCache = textureCache
   }
 
   func resize(size: CGSize, textureSize: CGSize) {
-    print(size)
     let ratio = Float(textureSize.whRatio)
     var referenceSize = size
     switch Renderer.aspectMode {
@@ -76,19 +87,46 @@ final class Renderer {
 
     renderPassDescriptor.colorAttachments[0].loadAction = .clear
 
-    renderEncoder.setRenderPipelineState(pipelineState)
-//    renderEncoder.setFragmentTexture(<#T##texture: MTLTexture?##MTLTexture?#>, index: 1)
+    if Settings.isSegmentationEnabled && !frame.bboxes.isEmpty {
+      renderEncoder.setRenderPipelineState(segmentationPipelineState)
+    } else {
+      renderEncoder.setRenderPipelineState(pipelineState)
+    }
     renderEncoder.setVertexBuffer(backgroundPlane, offset: 0, index: 0)
     renderEncoder.setVertexBytes(&uniforms, length: MemoryLayout<VertexUniforms>.stride, index: 1)
 
     renderEncoder.setFragmentTexture(texture, index: 0)
-    renderEncoder.setFragmentTexture(frame.maskTextures.first, index: 1)
 
-    var segmentationParams = SegmentationParams(confidence: 0.5, bboxCount: 2)
-    renderEncoder.setFragmentBytes(&segmentationParams, length: MemoryLayout<SegmentationParams>.stride, index: 0)
+    if Settings.isSegmentationEnabled && !frame.bboxes.isEmpty {
+      renderEncoder.setFragmentTexture(frame.maskTexture, index: 1)
+      var segmentationParams = SegmentationParams(
+        confidence: Settings.segmentationMaskConfidence,
+        bboxCount: UInt32(frame.bboxes.count)
+      )
+      renderEncoder.setFragmentBytes(&segmentationParams, length: MemoryLayout<SegmentationParams>.stride, index: 0)
+      var bboxes = frame.bboxes
+        .map {
+        BBox(
+          confidence: $0.confidence,
+          x: $0.x - Int32(Renderer.bboxOffset.x),
+          y: $0.y,
+          w: $0.w,
+          h: $0.h,
+          classId: $0.classId
+        )
+      }
+      renderEncoder.setFragmentBytes(&bboxes, length: MemoryLayout<BBox>.stride * bboxes.count, index: 1)
+      if Self.colors.isEmpty {
+        var colors = Array<simd_float3>(repeating: .zero, count: ObjectDetectionModel.classes.count)
+        renderEncoder.setFragmentBytes(&colors, length: MemoryLayout<simd_float3>.stride * colors.count, index: 2)
+      } else {
+        renderEncoder.setFragmentBytes(
+          &Self.colors, length: MemoryLayout<simd_float3>.stride * Self.colors.count, index: 2
+        )
+      }
+    }
 
     renderEncoder.drawPrimitives(type: .triangleStrip, vertexStart: 0, vertexCount: 4)
-
     renderEncoder.endEncoding()
 
     guard let currentDrawable = view.currentDrawable else { return }
@@ -114,9 +152,11 @@ private extension Renderer {
     return imagePlaneVertexBuffer
   }
 
-  static func createPipelineState(device: MTLDevice, library: MTLLibrary) -> MTLRenderPipelineState? {
+  static func createPipelineState(
+    device: MTLDevice, fragmentFunctionName: String, library: MTLLibrary
+  ) -> MTLRenderPipelineState? {
     let vertexFunction = library.makeFunction(name: "vertexBaseRendering")
-    let fragmentFunction = library.makeFunction(name: "fragmentBaseRendering")
+    let fragmentFunction = library.makeFunction(name: fragmentFunctionName)
 
     let imagePlaneVertexDescriptor = MTLVertexDescriptor()
 
@@ -138,7 +178,7 @@ private extension Renderer {
     imagePlaneVertexDescriptor.layouts[0].stepFunction = .perVertex
 
     let pipelineDescriptor = MTLRenderPipelineDescriptor()
-    pipelineDescriptor.label = "RenderingPipeline"
+    pipelineDescriptor.label = "RenderingPipeline-\(fragmentFunctionName)"
     pipelineDescriptor.vertexFunction = vertexFunction
     pipelineDescriptor.fragmentFunction = fragmentFunction
     pipelineDescriptor.vertexDescriptor = imagePlaneVertexDescriptor

@@ -17,6 +17,19 @@ struct PreviewView: UIViewControllerRepresentable {
 }
 
 final class PreviewViewController: UIViewController {
+  static let colors: [String: UIColor] = {
+    var colors = [String: UIColor]()
+    ObjectDetectionModel.classes.forEach { className in
+      let red = CGFloat.random(in: 0 ... 0.6)
+      let green = CGFloat.random(in: 0 ... 0.6)
+      let blue = CGFloat.random(in: 0 ... 0.6)
+      let color = UIColor(red: red, green: green, blue: blue, alpha: 1)
+      Renderer.colors.append(.init(x: Float(red), y: Float(green), z: Float(blue)))
+      colors[className] = color
+    }
+    return colors
+  }()
+
   let presenter: Presenter
 
   private let renderer: Renderer
@@ -24,18 +37,6 @@ final class PreviewViewController: UIViewController {
   private var resizeFailed = true
   private var bboxLayers: [CAShapeLayer] = []
   private var classLabels: [UILabel] = []
-  private let colors: [String: UIColor] = {
-    var colors = [String: UIColor]()
-    ObjectDetectionModel.classes.forEach { className in
-      colors[className] = UIColor(
-        red: CGFloat.random(in: 0 ... 0.6),
-        green: CGFloat.random(in: 0 ... 0.6),
-        blue: CGFloat.random(in: 0 ... 0.6),
-        alpha: 1
-      )
-    }
-    return colors
-  }()
 
   init(presenter: Presenter) {
     self.presenter = presenter
@@ -120,7 +121,7 @@ final class PreviewViewController: UIViewController {
       let path = UIBezierPath(rect: rect)
       let bboxLayer = bboxLayers[i]
       bboxLayer.path = path.cgPath
-      bboxLayer.strokeColor = colors[bbox.className]?.cgColor
+      bboxLayer.strokeColor = Self.colors[bbox.className]?.cgColor
       let lineWidth: CGFloat = 2
       bboxLayer.lineWidth = lineWidth
       bboxLayer.isHidden = false
@@ -132,7 +133,7 @@ final class PreviewViewController: UIViewController {
         origin: .init(x: rect.minX - lineWidth / 2, y: rect.minY - labelHeight),
         size: .init(width: rect.width + lineWidth, height: labelHeight)
       )
-      label.backgroundColor = colors[bbox.className]
+      label.backgroundColor = Self.colors[bbox.className]
       label.isHidden = false
     }
   }

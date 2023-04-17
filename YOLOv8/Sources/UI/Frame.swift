@@ -8,7 +8,7 @@ import MetalKit
 final class Frame {
   let pixelBuffer: CVPixelBuffer
   var bboxes: [BBox] = []
-  var maskTextures: [MTLTexture] = []
+  var maskTexture: MTLTexture?
   var processingDuration: Benchmark.MeasureResult = .zero
   var predictionDuration: Benchmark.MeasureResult = .zero
 

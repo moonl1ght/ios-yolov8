@@ -3,8 +3,17 @@
 //
 
 import Foundation
+import MetalKit
 
 extension CGSize {
+  var mtlSize: MTLSize {
+    .init(width: Int(width), height: Int(height), depth: 1)
+  }
+
+  var length: CGFloat {
+    width * height
+  }
+
   var whRatio: CGFloat {
     guard width != 0 else { return 0 }
     return width / height

@@ -5,5 +5,7 @@
 import Foundation
 
 enum Settings {
-  static var maxDetectedBBoxes = 100
+  static let maxDetectedBBoxes = 100
+  static var segmentationMaskConfidence: Float = 0.5
+  static var isSegmentationEnabled = true
 }

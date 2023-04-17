@@ -9,14 +9,6 @@ final class MTLCVTexture {
   let texture: MTLTexture
   let pixelBuffer: CVPixelBuffer
 
-  var width: Int {
-    texture.width
-  }
-
-  var height: Int {
-    texture.height
-  }
-
   private init(texture: MTLTexture, pixelBuffer: CVPixelBuffer) {
     self.texture = texture
     self.pixelBuffer = pixelBuffer
