@@ -40,7 +40,7 @@ final class PreviewViewController: UIViewController {
 
   init(presenter: Presenter) {
     self.presenter = presenter
-    renderer = Renderer()
+    renderer = Renderer(isSegmentationEnabled: presenter.modelType == .withSegmentation)
     super.init(nibName: nil, bundle: nil)
   }
 
@@ -127,7 +127,7 @@ final class PreviewViewController: UIViewController {
       bboxLayer.isHidden = false
 
       let label = classLabels[i]
-      label.text = bbox.className.capitalized
+      label.text = bbox.className.capitalized + " " + String(format: "%.2f", bbox.confidence)
       let labelHeight: CGFloat = 20
       label.frame = CGRect(
         origin: .init(x: rect.minX - lineWidth / 2, y: rect.minY - labelHeight),

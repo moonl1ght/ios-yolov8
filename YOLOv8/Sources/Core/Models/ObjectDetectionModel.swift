@@ -51,9 +51,8 @@ final class ObjectDetectionModel {
 
   private var modeln: YOLOv8n?
   private var modelns: YOLOv8nseg?
+  private var models: YOLOv8s?
   private var modelss: YOLOv8sseg?
-  private var modells: YOLOv8lseg?
-  private var modelxs: YOLOv8xseg?
   private var modelType: ModelType = .normal
   private var modalSize: ModelSize = .nano
 
@@ -65,7 +64,9 @@ final class ObjectDetectionModel {
       switch modelSize {
       case .nano:
         modeln = try YOLOv8n(configuration: .init())
-      case .small, .large, .xlarge:
+      case .small:
+        models = try YOLOv8s(configuration: .init())
+      case .large, .xlarge:
         throw Error.failedToLoadModel
       }
     case .withSegmentation:
@@ -74,10 +75,8 @@ final class ObjectDetectionModel {
         modelns = try YOLOv8nseg(configuration: .init())
       case .small:
         modelss = try YOLOv8sseg(configuration: .init())
-      case .large:
-        modells = try YOLOv8lseg(configuration: .init())
-      case .xlarge:
-        modelxs = try YOLOv8xseg(configuration: .init())
+      case .large, .xlarge:
+        throw Error.failedToLoadModel
       }
     }
 
@@ -91,7 +90,10 @@ final class ObjectDetectionModel {
         case .nano:
           guard let result = try modeln?.prediction(image: image) else { return nil }
           return Output(output: result.var_914, proto: nil)
-        case .small, .large, .xlarge:
+        case .small:
+          guard let result = try models?.prediction(image: image) else { return nil }
+          return Output(output: result.var_914, proto: nil)
+        case .large, .xlarge:
           return nil
         }
       case .withSegmentation:
@@ -102,12 +104,8 @@ final class ObjectDetectionModel {
         case .small:
           guard let result = try modelss?.prediction(image: image) else { return nil }
           return Output(output: result.var_1053, proto: result.p)
-        case .large:
-          guard let result = try modells?.prediction(image: image) else { return nil }
-          return Output(output: result.var_1505, proto: result.p)
-        case .xlarge:
-          guard let result = try modelxs?.prediction(image: image) else { return nil }
-          return Output(output: result.var_1505, proto: result.p)
+        case .large, .xlarge:
+          return nil
         }
       }
     } catch {

@@ -6,15 +6,22 @@ import SwiftUI
 
 struct MainView: View {
   @State private var showingObjectDetection = false
+  @State private var showingObjectSegmentation = false
 
   var body: some View {
-    VStack {
+    VStack(spacing: 20) {
       button(title: "Object detection") {
         showingObjectDetection.toggle()
       }
+      button(title: "Object segmentation") {
+        showingObjectSegmentation.toggle()
+      }
     }
     .fullScreenCover(isPresented: $showingObjectDetection) {
-      ObjectDetectionView()
+      ObjectDetectionView(modelType: .normal)
+    }
+    .fullScreenCover(isPresented: $showingObjectSegmentation) {
+      ObjectDetectionView(modelType: .withSegmentation)
     }
     .preferredColorScheme(.light)
   }

@@ -17,7 +17,9 @@ final class Presenter: ObservableObject {
   @Published private(set) var frameInfo: FrameInfo?
 
   let cameraController: CameraController
-  let objectDetectionController: ObjectDetectionController
+  let objectDetector: ObjectDetector
+
+  let modelType: ObjectDetectionModel.ModelType
 
   private(set) var frame: Frame?
 
@@ -26,11 +28,14 @@ final class Presenter: ObservableObject {
 
   private let queue = DispatchQueue(label: "com.YOLOv8.queue", qos: .userInteractive)
 
-  init() {
+  init(modelType: ObjectDetectionModel.ModelType) {
+    self.modelType = modelType
     cameraController = CameraController(queue: queue)
-    objectDetectionController = ObjectDetectionController(queue: queue)
-    objectDetectionController.delegate = self
-    cameraController.delegate = objectDetectionController
+    objectDetector = ObjectDetector(
+      queue: queue, modelType: modelType, modelSize: .small
+    )
+    objectDetector.delegate = self
+    cameraController.delegate = objectDetector
     bind()
   }
 
@@ -44,7 +49,7 @@ final class Presenter: ObservableObject {
   }
 }
 
-extension Presenter: ObjectDetectionDelegate {
+extension Presenter: ObjectDetectorDelegate {
   func didDetectFrame(_ frame: Frame) {
     let predictionDuration = String(format: "%.4f", frame.predictionDuration.seconds)
     let processingDurationDelta = frame.processingDuration.seconds - frame.predictionDuration.seconds

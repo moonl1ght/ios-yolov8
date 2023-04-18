@@ -7,6 +7,17 @@
 
 #import <simd/simd.h>
 
+typedef enum YOLOBufferIndices {
+  iParams = 0,
+  iBBoxes = 1,
+  iBBoxCount = 2,
+  iKeptBBoxMap = 3,
+  iThreadgroupSize = 4,
+  iThreadgroupsPerGrid = 5,
+  iPrediction = 6,
+  iMaskProposals = 7
+} YOLOBufferIndices;
+
 typedef struct NMSParams {
   float iouThreshold;
 } NMSParams;

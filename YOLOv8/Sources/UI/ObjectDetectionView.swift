@@ -8,9 +8,13 @@ import SwiftUI
 
 struct ObjectDetectionView: View {
   @Environment(\.dismiss) var dismiss
-  @StateObject private var presenter = Presenter()
+  @StateObject private var presenter: Presenter
   @State private var isLoaded = false
   @State private var loadingFailed = false
+
+  init(modelType: ObjectDetectionModel.ModelType) {
+    _presenter = StateObject(wrappedValue: Presenter(modelType: modelType))
+  }
 
   var body: some View {
     ZStack {
@@ -33,7 +37,7 @@ struct ObjectDetectionView: View {
       }
     }
     .onAppear {
-      presenter.objectDetectionController.load { result in
+      presenter.objectDetector.load { result in
         switch result {
         case .success:
           isLoaded = true

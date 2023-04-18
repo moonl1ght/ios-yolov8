@@ -71,7 +71,8 @@ fragment float4 fragmentSegmentationRendering(FragmentIn in [[ stage_in ]],
   float4 textureColor = float4(texture.sample(imageSampler, in.uv).rgb, 1);
   if (classId != -1) {
     float4 color = float4(colors[classId], 1);
-    float4 outColor = 0.5 * color + (1 - 0.5) * textureColor;
+    float alpha = min(0.7, maxConfidence);
+    float4 outColor = alpha * color + (1 - alpha) * textureColor;
     return outColor;
   } else {
     return textureColor;

@@ -23,8 +23,10 @@ final class Renderer {
   private let segmentationPipelineState: MTLRenderPipelineState
   private let textureCache: CVMetalTextureCache
   private var uniforms = VertexUniforms()
+  private var isSegmentationEnabled: Bool
 
-  init() {
+  init(isSegmentationEnabled: Bool) {
+    self.isSegmentationEnabled = isSegmentationEnabled
     let device = DeviceManager.device
     guard
       let commandQueue = device.makeCommandQueue(),
@@ -69,7 +71,7 @@ final class Renderer {
       Self.bboxOffset.x = abs((referenceSize.width - size.width) / 2).rounded(.toNearestOrEven)
     }
     referenceSize.round()
-    ObjectDetectionController.referenceSize = referenceSize
+    ObjectDetector.referenceSize = referenceSize
   }
 
   func render(
@@ -82,12 +84,13 @@ final class Renderer {
       let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor),
       let texture = frame.pixelBuffer.makeMTLTexture(usingTextureCache: textureCache, pixelFormat: .bgra8Unorm)
     else {
+      assertionFailure()
       return
     }
 
     renderPassDescriptor.colorAttachments[0].loadAction = .clear
 
-    if Settings.isSegmentationEnabled && !frame.bboxes.isEmpty {
+    if isSegmentationEnabled && !frame.bboxes.isEmpty {
       renderEncoder.setRenderPipelineState(segmentationPipelineState)
     } else {
       renderEncoder.setRenderPipelineState(pipelineState)
@@ -97,7 +100,7 @@ final class Renderer {
 
     renderEncoder.setFragmentTexture(texture, index: 0)
 
-    if Settings.isSegmentationEnabled && !frame.bboxes.isEmpty {
+    if isSegmentationEnabled && !frame.bboxes.isEmpty {
       renderEncoder.setFragmentTexture(frame.maskTexture, index: 1)
       var segmentationParams = SegmentationParams(
         confidence: Settings.segmentationMaskConfidence,
@@ -106,14 +109,14 @@ final class Renderer {
       renderEncoder.setFragmentBytes(&segmentationParams, length: MemoryLayout<SegmentationParams>.stride, index: 0)
       var bboxes = frame.bboxes
         .map {
-        BBox(
-          confidence: $0.confidence,
-          x: $0.x - Int32(Renderer.bboxOffset.x),
-          y: $0.y,
-          w: $0.w,
-          h: $0.h,
-          classId: $0.classId
-        )
+          BBox(
+            confidence: $0.confidence,
+            x: $0.x - Int32(Renderer.bboxOffset.x),
+            y: $0.y,
+            w: $0.w,
+            h: $0.h,
+            classId: $0.classId
+          )
       }
       renderEncoder.setFragmentBytes(&bboxes, length: MemoryLayout<BBox>.stride * bboxes.count, index: 1)
       if Self.colors.isEmpty {

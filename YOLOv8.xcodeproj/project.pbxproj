@@ -7,13 +7,14 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		116F3A8B29ED82700013B9FF /* Indices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116F3A8A29ED82700013B9FF /* Indices.swift */; };
 		11835A8C29AD4FFC003D764C /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 11835A8B29AD4FFC003D764C /* Preview Assets.xcassets */; };
 		11835A9329AD59C8003D764C /* ObjectDetectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11835A9229AD59C8003D764C /* ObjectDetectionView.swift */; };
 		11835A9529AD5A08003D764C /* Presenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11835A9429AD5A08003D764C /* Presenter.swift */; };
 		11835A9729AD6760003D764C /* DeviceManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11835A9629AD6760003D764C /* DeviceManager.swift */; };
 		11835A9B29AD679E003D764C /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11835A9A29AD679E003D764C /* MetalKit.framework */; };
 		11835A9D29AD67A2003D764C /* MetalPerformanceShaders.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 11835A9C29AD67A2003D764C /* MetalPerformanceShaders.framework */; };
-		11835A9F29AD685E003D764C /* ObjectDetectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11835A9E29AD685E003D764C /* ObjectDetectionController.swift */; };
+		11835A9F29AD685E003D764C /* ObjectDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11835A9E29AD685E003D764C /* ObjectDetector.swift */; };
 		11835AA229AD6927003D764C /* Rendering.metal in Sources */ = {isa = PBXBuildFile; fileRef = 11835AA129AD6927003D764C /* Rendering.metal */; };
 		11835AA529AD695B003D764C /* YOLO.metal in Sources */ = {isa = PBXBuildFile; fileRef = 11835AA429AD695A003D764C /* YOLO.metal */; };
 		11835AAC29AD6B00003D764C /* MTLPipelineState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11835AAB29AD6B00003D764C /* MTLPipelineState.swift */; };
@@ -28,8 +29,7 @@
 		11835AC129AD7843003D764C /* ObjectDetectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11835AC029AD7843003D764C /* ObjectDetectionModel.swift */; };
 		11835AC329AD8F51003D764C /* Benchmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11835AC229AD8F51003D764C /* Benchmark.swift */; };
 		1191898929BA441A002ECF17 /* YOLOv8sseg.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 1191898829BA441A002ECF17 /* YOLOv8sseg.mlmodel */; };
-		1191898B29BA443D002ECF17 /* YOLOv8lseg.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 1191898A29BA443D002ECF17 /* YOLOv8lseg.mlmodel */; };
-		1191898D29BA50A5002ECF17 /* YOLOv8xseg.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 1191898C29BA50A5002ECF17 /* YOLOv8xseg.mlmodel */; };
+		11B7AF9E29EEB4FA0040630B /* YOLOv8s.mlmodel in Sources */ = {isa = PBXBuildFile; fileRef = 11B7AF9D29EEB4F90040630B /* YOLOv8s.mlmodel */; };
 		11D5090E29AD4AE500AA8804 /* YOLOv8App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D5090D29AD4AE500AA8804 /* YOLOv8App.swift */; };
 		11D5091029AD4AE500AA8804 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D5090F29AD4AE500AA8804 /* MainView.swift */; };
 		11D5091229AD4AE600AA8804 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 11D5091129AD4AE600AA8804 /* Assets.xcassets */; };
@@ -45,6 +45,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		116F3A8A29ED82700013B9FF /* Indices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Indices.swift; sourceTree = "<group>"; };
 		11835A8B29AD4FFC003D764C /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		11835A8F29AD51C8003D764C /* BridgingHeader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BridgingHeader.h; sourceTree = "<group>"; };
 		11835A9229AD59C8003D764C /* ObjectDetectionView.swift */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.swift; path = ObjectDetectionView.swift; sourceTree = "<group>"; tabWidth = 2; };
@@ -53,7 +54,7 @@
 		11835A9829AD6796003D764C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		11835A9A29AD679E003D764C /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		11835A9C29AD67A2003D764C /* MetalPerformanceShaders.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalPerformanceShaders.framework; path = System/Library/Frameworks/MetalPerformanceShaders.framework; sourceTree = SDKROOT; };
-		11835A9E29AD685E003D764C /* ObjectDetectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectDetectionController.swift; sourceTree = "<group>"; };
+		11835A9E29AD685E003D764C /* ObjectDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectDetector.swift; sourceTree = "<group>"; };
 		11835AA029AD68D4003D764C /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
 		11835AA129AD6927003D764C /* Rendering.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Rendering.metal; sourceTree = "<group>"; };
 		11835AA329AD6954003D764C /* YOLO.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = YOLO.h; sourceTree = "<group>"; };
@@ -70,8 +71,7 @@
 		11835AC029AD7843003D764C /* ObjectDetectionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObjectDetectionModel.swift; sourceTree = "<group>"; };
 		11835AC229AD8F51003D764C /* Benchmark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Benchmark.swift; sourceTree = "<group>"; };
 		1191898829BA441A002ECF17 /* YOLOv8sseg.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = YOLOv8sseg.mlmodel; sourceTree = "<group>"; };
-		1191898A29BA443D002ECF17 /* YOLOv8lseg.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = YOLOv8lseg.mlmodel; sourceTree = "<group>"; };
-		1191898C29BA50A5002ECF17 /* YOLOv8xseg.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = YOLOv8xseg.mlmodel; sourceTree = "<group>"; };
+		11B7AF9D29EEB4F90040630B /* YOLOv8s.mlmodel */ = {isa = PBXFileReference; lastKnownFileType = file.mlmodel; path = YOLOv8s.mlmodel; sourceTree = "<group>"; };
 		11D5090A29AD4AE500AA8804 /* YOLOv8.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = YOLOv8.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		11D5090D29AD4AE500AA8804 /* YOLOv8App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YOLOv8App.swift; sourceTree = "<group>"; };
 		11D5090F29AD4AE500AA8804 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
@@ -117,6 +117,7 @@
 				11835AAB29AD6B00003D764C /* MTLPipelineState.swift */,
 				11F76ED729B6753C00BDE32D /* TransformMatrix.swift */,
 				11835AC229AD8F51003D764C /* Benchmark.swift */,
+				116F3A8A29ED82700013B9FF /* Indices.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -136,7 +137,7 @@
 			isa = PBXGroup;
 			children = (
 				11D5091E29AD4F1300AA8804 /* CameraController.swift */,
-				11835A9E29AD685E003D764C /* ObjectDetectionController.swift */,
+				11835A9E29AD685E003D764C /* ObjectDetector.swift */,
 				11DBDA0529B9E1D90011844A /* Settings.swift */,
 				11835AA829AD6ABA003D764C /* Processing */,
 				11835AAD29AD6B6A003D764C /* Models */,
@@ -201,9 +202,8 @@
 			children = (
 				11835ABC29AD77E1003D764C /* YOLOv8n.mlmodel */,
 				11835ABE29AD77E8003D764C /* YOLOv8nseg.mlmodel */,
+				11B7AF9D29EEB4F90040630B /* YOLOv8s.mlmodel */,
 				1191898829BA441A002ECF17 /* YOLOv8sseg.mlmodel */,
-				1191898A29BA443D002ECF17 /* YOLOv8lseg.mlmodel */,
-				1191898C29BA50A5002ECF17 /* YOLOv8xseg.mlmodel */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -332,20 +332,20 @@
 				11D5091029AD4AE500AA8804 /* MainView.swift in Sources */,
 				11F76EDC29B678F100BDE32D /* Frame.swift in Sources */,
 				11835A9729AD6760003D764C /* DeviceManager.swift in Sources */,
-				11835A9F29AD685E003D764C /* ObjectDetectionController.swift in Sources */,
+				11835A9F29AD685E003D764C /* ObjectDetector.swift in Sources */,
 				11835A9329AD59C8003D764C /* ObjectDetectionView.swift in Sources */,
 				11835AB029AD6BF3003D764C /* MTLComputePipelineState.swift in Sources */,
+				116F3A8B29ED82700013B9FF /* Indices.swift in Sources */,
 				11835ABF29AD77E8003D764C /* YOLOv8nseg.mlmodel in Sources */,
+				11B7AF9E29EEB4FA0040630B /* YOLOv8s.mlmodel in Sources */,
 				11DBDA0829B9F24C0011844A /* BBox.swift in Sources */,
 				11F76EDA29B675B400BDE32D /* PreviewView.swift in Sources */,
 				11835A9529AD5A08003D764C /* Presenter.swift in Sources */,
-				1191898D29BA50A5002ECF17 /* YOLOv8xseg.mlmodel in Sources */,
 				11835ABA29AD7655003D764C /* CVMetalTextureCache.swift in Sources */,
 				11835AC329AD8F51003D764C /* Benchmark.swift in Sources */,
 				11D5091F29AD4F1300AA8804 /* CameraController.swift in Sources */,
 				11835AB429AD6FE8003D764C /* CVPixelBuffer.swift in Sources */,
 				11F76ED629B6743B00BDE32D /* CGSize.swift in Sources */,
-				1191898B29BA443D002ECF17 /* YOLOv8lseg.mlmodel in Sources */,
 				11835AB229AD6F9C003D764C /* MTLCVTexture.swift in Sources */,
 				11F76ED829B6753C00BDE32D /* TransformMatrix.swift in Sources */,
 				11835AB629AD7011003D764C /* CVMetalTexture.swift in Sources */,
