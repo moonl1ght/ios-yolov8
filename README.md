@@ -2,7 +2,7 @@
 
 Online object dtection and segmentation using [YOLOv8 by ultralytics](https://github.com/ultralytics/ultralytics).
 
-The output of the YOLOv8 model processed on GPU using Metal.
+The output of the YOLOv8 model processed on the GPU using Metal.
 
 1. Filtering bounding box and mask proposals with high confidence.
 
